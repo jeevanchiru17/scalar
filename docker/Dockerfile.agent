@@ -1,0 +1,31 @@
+# Scalar Agent Container
+# Lightweight container for individual agents
+
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install minimal dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy and install requirements
+COPY antigravity/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy agent code
+COPY antigravity/ /app/antigravity/
+COPY api/ /app/api/
+
+# Environment
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
+
+# Agent port (overridden by docker-compose)
+ENV AGENT_PORT=8001
+
+EXPOSE ${AGENT_PORT}
+
+# Start agent service
+CMD ["python", "-m", "api.agent_service"]

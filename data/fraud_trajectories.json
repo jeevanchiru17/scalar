@@ -1,0 +1,648 @@
+{
+    "system": "Scalar Financial Bodyguard",
+    "data_sources": [
+        "Reddit r/india",
+        "Twitter/X",
+        "ISAC India",
+        "Cybercrime.gov.in",
+        "Supreme Court cases 2024"
+    ],
+    "target_users": {
+        "age_group": "35-80+",
+        "segments": [
+            {
+                "name": "Working Professionals",
+                "age": "35-50",
+                "risk_level": "medium"
+            },
+            {
+                "name": "Pre-Retirees",
+                "age": "50-60",
+                "risk_level": "high"
+            },
+            {
+                "name": "Senior Citizens",
+                "age": "60+",
+                "risk_level": "critical"
+            }
+        ]
+    },
+    "fraud_trajectories": [
+        {
+            "id": "T001",
+            "name": "UPI Collect Request Scam",
+            "category": "payment_fraud",
+            "target_age": "35+",
+            "risk_score": 0.95,
+            "source": "Reddit r/india, Twitter",
+            "real_case": "Multiple Reddit posts about OLX/Quikr sellers losing money when accepting 'payment' via collect request",
+            "trajectory": [
+                {
+                    "step": 1,
+                    "action": "Victim lists item for sale on OLX/Facebook Marketplace",
+                    "agent": null
+                },
+                {
+                    "step": 2,
+                    "action": "Scammer shows interest, agrees to pay full price immediately",
+                    "agent": "behavior_agent"
+                },
+                {
+                    "step": 3,
+                    "action": "Claims to be army/CRPF personnel, needs special payment method",
+                    "agent": "impersonation_agent"
+                },
+                {
+                    "step": 4,
+                    "action": "Sends UPI collect request instead of payment",
+                    "agent": "upi_agent"
+                },
+                {
+                    "step": 5,
+                    "action": "Victim enters PIN thinking they're receiving, money debited",
+                    "agent": "upi_agent"
+                }
+            ],
+            "red_flags": [
+                "collect",
+                "request",
+                "receive payment",
+                "army",
+                "crpf",
+                "posting"
+            ],
+            "hindi_warning": "कलेक्ट रिक्वेस्ट से पैसे प्राप्त नहीं होते, पैसे कटते हैं!",
+            "detection_agents": [
+                "upi_agent",
+                "impersonation_agent"
+            ]
+        },
+        {
+            "id": "T002",
+            "name": "Digital Arrest Scam",
+            "category": "impersonation",
+            "target_age": "50+",
+            "risk_score": 0.99,
+            "source": "Supreme Court 2024, Economic Times, Cybercrime.gov.in",
+            "real_case": "71-year-old Hyderabad man lost ₹1.92 crore. Mumbai businessman lost ₹58 crore. Total losses exceed ₹3,000 crore nationwide.",
+            "trajectory": [
+                {
+                    "step": 1,
+                    "action": "Victim receives call claiming to be from CBI/ED/Customs",
+                    "agent": "impersonation_agent"
+                },
+                {
+                    "step": 2,
+                    "action": "Told their Aadhaar/PAN is linked to money laundering or drugs parcel",
+                    "agent": "impersonation_agent"
+                },
+                {
+                    "step": 3,
+                    "action": "Video call with fake uniform, fake background of police station",
+                    "agent": "impersonation_agent"
+                },
+                {
+                    "step": 4,
+                    "action": "Kept on call for hours (digital arrest), told not to inform family",
+                    "agent": "behavior_agent"
+                },
+                {
+                    "step": 5,
+                    "action": "Asked to transfer money to 'RBI safe account' for verification",
+                    "agent": "upi_agent"
+                },
+                {
+                    "step": 6,
+                    "action": "Drained of life savings over multiple days",
+                    "agent": null
+                }
+            ],
+            "red_flags": [
+                "police",
+                "cbi",
+                "ed",
+                "digital arrest",
+                "video call",
+                "aadhaar",
+                "money laundering",
+                "safe account",
+                "rbi"
+            ],
+            "hindi_warning": "डिजिटल अरेस्ट जैसी कोई चीज़ नहीं है! असली पुलिस फोन पर पैसे नहीं मांगती! तुरंत 1930 पर कॉल करें!",
+            "detection_agents": [
+                "impersonation_agent",
+                "behavior_agent"
+            ]
+        },
+        {
+            "id": "T003",
+            "name": "Fake KYC APK Scam",
+            "category": "phishing",
+            "target_age": "40+",
+            "risk_score": 0.98,
+            "source": "ISAC India, RBI Sachet",
+            "real_case": "Thousands of complaints about SBI/HDFC fake KYC SMS leading to remote access apps being installed",
+            "trajectory": [
+                {
+                    "step": 1,
+                    "action": "Victim receives SMS about KYC expiry, account block in 24 hours",
+                    "agent": "phishing_agent"
+                },
+                {
+                    "step": 2,
+                    "action": "SMS contains bit.ly link or APK download link",
+                    "agent": "phishing_agent"
+                },
+                {
+                    "step": 3,
+                    "action": "APK installs screen mirroring/remote access malware",
+                    "agent": "phishing_agent"
+                },
+                {
+                    "step": 4,
+                    "action": "Scammer calls, asks victim to login to banking app",
+                    "agent": "behavior_agent"
+                },
+                {
+                    "step": 5,
+                    "action": "Scammer watches screen, captures OTP, empties all accounts",
+                    "agent": "upi_agent"
+                }
+            ],
+            "red_flags": [
+                "kyc",
+                "update",
+                "block",
+                "24 hours",
+                "apk",
+                "download",
+                "bit.ly",
+                "tinyurl"
+            ],
+            "hindi_warning": "बैंक कभी APK डाउनलोड करने या लिंक पर क्लिक करने को नहीं कहता!",
+            "detection_agents": [
+                "phishing_agent",
+                "behavior_agent"
+            ]
+        },
+        {
+            "id": "T004",
+            "name": "Fake Customer Care Scam",
+            "category": "phishing",
+            "target_age": "45+",
+            "risk_score": 0.92,
+            "source": "Reddit r/LegalAdviceIndia, Twitter",
+            "real_case": "User searched Google for SBI customer care, found SEO-manipulated fake number, lost ₹4.5 lakh via AnyDesk",
+            "trajectory": [
+                {
+                    "step": 1,
+                    "action": "Victim searches Google for bank/app customer care number",
+                    "agent": null
+                },
+                {
+                    "step": 2,
+                    "action": "Finds fake number (scammers use SEO to rank fake sites)",
+                    "agent": "phishing_agent"
+                },
+                {
+                    "step": 3,
+                    "action": "Calls number, 'executive' asks for account verification",
+                    "agent": "phishing_agent"
+                },
+                {
+                    "step": 4,
+                    "action": "Asked to install AnyDesk/TeamViewer for 'remote assistance'",
+                    "agent": "phishing_agent"
+                },
+                {
+                    "step": 5,
+                    "action": "Scammer takes control, initiates transactions while watching OTP",
+                    "agent": "upi_agent"
+                }
+            ],
+            "red_flags": [
+                "customer care",
+                "helpline",
+                "anydesk",
+                "teamviewer",
+                "quicksupport",
+                "screen share",
+                "remote"
+            ],
+            "hindi_warning": "Google से कस्टमर केयर नंबर न खोजें! बैंक की आधिकारिक वेबसाइट या पासबुक देखें!",
+            "detection_agents": [
+                "phishing_agent"
+            ]
+        },
+        {
+            "id": "T005",
+            "name": "Jumped Deposit UPI Scam",
+            "category": "payment_fraud",
+            "target_age": "35+",
+            "risk_score": 0.88,
+            "source": "The Hindu, Reddit",
+            "real_case": "New scam where small deposit is made, then large withdrawal request sent immediately",
+            "trajectory": [
+                {
+                    "step": 1,
+                    "action": "Scammer sends ₹1 to victim's UPI ID",
+                    "agent": null
+                },
+                {
+                    "step": 2,
+                    "action": "Immediately sends collect request for ₹10,000+",
+                    "agent": "upi_agent"
+                },
+                {
+                    "step": 3,
+                    "action": "Victim gets notification, sees recent credit, trusts the request",
+                    "agent": "behavior_agent"
+                },
+                {
+                    "step": 4,
+                    "action": "Enters PIN to 'receive more money', actually approves withdrawal",
+                    "agent": "upi_agent"
+                }
+            ],
+            "red_flags": [
+                "collect",
+                "request",
+                "receive",
+                "credit",
+                "more money"
+            ],
+            "hindi_warning": "पैसे प्राप्त करने के लिए कभी PIN नहीं डालना होता!",
+            "detection_agents": [
+                "upi_agent",
+                "behavior_agent"
+            ]
+        },
+        {
+            "id": "T006",
+            "name": "Electricity Bill Disconnection Threat",
+            "category": "urgency_scam",
+            "target_age": "45+",
+            "risk_score": 0.85,
+            "source": "Twitter, Cybercrime.gov.in",
+            "real_case": "Mass SMS campaign threatening electricity cut within 2 hours unless payment made to specific number",
+            "trajectory": [
+                {
+                    "step": 1,
+                    "action": "Victim receives SMS about pending electricity bill",
+                    "agent": "phishing_agent"
+                },
+                {
+                    "step": 2,
+                    "action": "Threatened with immediate disconnection today/tonight",
+                    "agent": "behavior_agent"
+                },
+                {
+                    "step": 3,
+                    "action": "Given number to call or UPI ID to pay",
+                    "agent": "phishing_agent"
+                },
+                {
+                    "step": 4,
+                    "action": "When calling, asked for bank details or OTP",
+                    "agent": "phishing_agent"
+                },
+                {
+                    "step": 5,
+                    "action": "Account emptied or UPI payment made to scammer",
+                    "agent": "upi_agent"
+                }
+            ],
+            "red_flags": [
+                "electricity",
+                "bill",
+                "disconnect",
+                "cut",
+                "today",
+                "tonight",
+                "immediate"
+            ],
+            "hindi_warning": "बिजली विभाग SMS से तत्काल भुगतान नहीं मांगता! आधिकारिक वेबसाइट पर जाएं!",
+            "detection_agents": [
+                "phishing_agent",
+                "behavior_agent"
+            ]
+        },
+        {
+            "id": "T007",
+            "name": "Crypto/Forex Investment Scam",
+            "category": "investment_fraud",
+            "target_age": "35-55",
+            "risk_score": 0.94,
+            "source": "Reddit r/IndiaInvestments, SEBI warnings",
+            "real_case": "WhatsApp groups promising 50% monthly returns in crypto. Victims invest ₹5-50 lakh, platform disappears",
+            "trajectory": [
+                {
+                    "step": 1,
+                    "action": "Victim added to WhatsApp/Telegram 'investment' group",
+                    "agent": null
+                },
+                {
+                    "step": 2,
+                    "action": "Shown fake testimonials, screenshots of huge returns",
+                    "agent": "investment_agent"
+                },
+                {
+                    "step": 3,
+                    "action": "Initial small investment (₹5000) shows quick 'profits'",
+                    "agent": "investment_agent"
+                },
+                {
+                    "step": 4,
+                    "action": "Encouraged to invest life savings, even take loans",
+                    "agent": "investment_agent"
+                },
+                {
+                    "step": 5,
+                    "action": "When trying to withdraw, asked to pay 'tax' first",
+                    "agent": "investment_agent"
+                },
+                {
+                    "step": 6,
+                    "action": "Platform/group disappears, all money lost",
+                    "agent": null
+                }
+            ],
+            "red_flags": [
+                "guaranteed returns",
+                "crypto",
+                "forex",
+                "50%",
+                "100%",
+                "double",
+                "no risk",
+                "daily profit",
+                "withdrawal tax"
+            ],
+            "hindi_warning": "कोई भी 'गारंटीड रिटर्न' वाला निवेश धोखाधड़ी है! SEBI पंजीकरण जांचें!",
+            "detection_agents": [
+                "investment_agent"
+            ]
+        },
+        {
+            "id": "T008",
+            "name": "Loan Pre-Approval Scam",
+            "category": "advance_fee",
+            "target_age": "35-50",
+            "risk_score": 0.87,
+            "source": "RBI Sachet, Consumer complaints",
+            "real_case": "Fake loan apps collecting ₹500-5000 as 'processing fee' then asking for more or disappearing",
+            "trajectory": [
+                {
+                    "step": 1,
+                    "action": "Victim receives call/SMS about pre-approved loan at low interest",
+                    "agent": "phishing_agent"
+                },
+                {
+                    "step": 2,
+                    "action": "Asked to download company app or visit website",
+                    "agent": "phishing_agent"
+                },
+                {
+                    "step": 3,
+                    "action": "App asks for extensive permissions (contacts, gallery, SMS)",
+                    "agent": "document_agent"
+                },
+                {
+                    "step": 4,
+                    "action": "Loan approved instantly, asked to pay GST/processing fee",
+                    "agent": "investment_agent"
+                },
+                {
+                    "step": 5,
+                    "action": "After payment, more fees demanded or contacts harassed",
+                    "agent": null
+                }
+            ],
+            "red_flags": [
+                "pre-approved",
+                "instant loan",
+                "processing fee",
+                "gst deposit",
+                "low interest",
+                "no documents"
+            ],
+            "hindi_warning": "असली बैंक लोन से पहले फीस नहीं मांगता! RBI लाइसेंस जांचें!",
+            "detection_agents": [
+                "phishing_agent",
+                "document_agent"
+            ]
+        },
+        {
+            "id": "T009",
+            "name": "Parcel/Courier Drug Scam",
+            "category": "impersonation",
+            "target_age": "40+",
+            "risk_score": 0.93,
+            "source": "Economic Times, Supreme Court",
+            "real_case": "Part of digital arrest ecosystem. Victim told parcel with drugs/illegal currency is held at Mumbai customs",
+            "trajectory": [
+                {
+                    "step": 1,
+                    "action": "Victim receives call claiming to be from FedEx/DHL/customs",
+                    "agent": "impersonation_agent"
+                },
+                {
+                    "step": 2,
+                    "action": "Told parcel in their name contains drugs or illegal currency",
+                    "agent": "impersonation_agent"
+                },
+                {
+                    "step": 3,
+                    "action": "Call transferred to 'customs officer' then 'CBI officer'",
+                    "agent": "impersonation_agent"
+                },
+                {
+                    "step": 4,
+                    "action": "Video call shown fake uniform, threatened with arrest",
+                    "agent": "impersonation_agent"
+                },
+                {
+                    "step": 5,
+                    "action": "Asked to pay fine to avoid arrest, kept isolated for hours",
+                    "agent": "behavior_agent"
+                }
+            ],
+            "red_flags": [
+                "parcel",
+                "courier",
+                "fedex",
+                "dhl",
+                "customs",
+                "drugs",
+                "currency",
+                "detained",
+                "ncb"
+            ],
+            "hindi_warning": "कस्टम्स या कोरियर कंपनी कभी ड्रग्स के बारे में फोन नहीं करती! फोन काटें!",
+            "detection_agents": [
+                "impersonation_agent",
+                "behavior_agent"
+            ]
+        },
+        {
+            "id": "T010",
+            "name": "Insurance Premium Refund Scam",
+            "category": "refund_scam",
+            "target_age": "55+",
+            "risk_score": 0.86,
+            "source": "IRDAI, Consumer forums",
+            "real_case": "Elderly targeted with calls about lapsed LIC/ICICI policies with refund available if GST paid first",
+            "trajectory": [
+                {
+                    "step": 1,
+                    "action": "Victim receives call about old/lapsed insurance policy",
+                    "agent": "phishing_agent"
+                },
+                {
+                    "step": 2,
+                    "action": "Told they are eligible for premium refund/maturity bonus",
+                    "agent": "phishing_agent"
+                },
+                {
+                    "step": 3,
+                    "action": "Asked to pay GST or processing fee to receive refund",
+                    "agent": "investment_agent"
+                },
+                {
+                    "step": 4,
+                    "action": "After payment, asked for more fees (verification, IRDA fee)",
+                    "agent": "investment_agent"
+                },
+                {
+                    "step": 5,
+                    "action": "Cycle continues until victim realizes or runs out of money",
+                    "agent": null
+                }
+            ],
+            "red_flags": [
+                "insurance refund",
+                "policy matured",
+                "bonus",
+                "gst",
+                "processing fee",
+                "irda",
+                "lic",
+                "premium refund"
+            ],
+            "hindi_warning": "बीमा रिफंड के लिए कोई फीस नहीं लगती! IRDAI हेल्पलाइन: 155255!",
+            "detection_agents": [
+                "phishing_agent",
+                "investment_agent"
+            ]
+        },
+        {
+            "id": "T011",
+            "name": "SIM Swap Fraud",
+            "category": "identity_theft",
+            "target_age": "35+",
+            "risk_score": 0.96,
+            "source": "Reddit r/india, RBI",
+            "real_case": "Scammer gets duplicate SIM issued using forged documents, receives all OTPs, drains bank accounts",
+            "trajectory": [
+                {
+                    "step": 1,
+                    "action": "Scammer obtains victim's personal info (Aadhaar, PAN, photo)",
+                    "agent": null
+                },
+                {
+                    "step": 2,
+                    "action": "Visits telecom store with forged ID, claims SIM lost",
+                    "agent": null
+                },
+                {
+                    "step": 3,
+                    "action": "New SIM issued, victim's SIM stops working",
+                    "agent": "phishing_agent"
+                },
+                {
+                    "step": 4,
+                    "action": "Scammer receives all OTPs on new SIM",
+                    "agent": "phishing_agent"
+                },
+                {
+                    "step": 5,
+                    "action": "Logs into banking apps, transfers all money before victim notices",
+                    "agent": "upi_agent"
+                }
+            ],
+            "red_flags": [
+                "sim not working",
+                "no network",
+                "sudden",
+                "otp not received"
+            ],
+            "hindi_warning": "अगर SIM अचानक बंद हो जाए तो तुरंत टेलीकॉम कंपनी और बैंक को सूचित करें!",
+            "detection_agents": [
+                "phishing_agent",
+                "upi_agent"
+            ]
+        },
+        {
+            "id": "T012",
+            "name": "QR Code Payment Scam",
+            "category": "payment_fraud",
+            "target_age": "35-60",
+            "risk_score": 0.91,
+            "source": "Twitter viral videos, Police warnings",
+            "real_case": "Victim shown QR on vehicle windshield for 'parking fine', scanning leads to money being debited",
+            "trajectory": [
+                {
+                    "step": 1,
+                    "action": "Scammer places fake QR code on vehicle, shop, or sends via WhatsApp",
+                    "agent": null
+                },
+                {
+                    "step": 2,
+                    "action": "Claims scanning QR will credit money (refund, cashback, prize)",
+                    "agent": "upi_agent"
+                },
+                {
+                    "step": 3,
+                    "action": "Victim scans QR code expecting to receive money",
+                    "agent": "upi_agent"
+                },
+                {
+                    "step": 4,
+                    "action": "QR actually initiates payment request from victim",
+                    "agent": "upi_agent"
+                },
+                {
+                    "step": 5,
+                    "action": "Victim enters PIN to 'verify', money debited",
+                    "agent": "upi_agent"
+                }
+            ],
+            "red_flags": [
+                "scan qr",
+                "receive money",
+                "credit",
+                "scan to get",
+                "parking",
+                "challan"
+            ],
+            "hindi_warning": "QR स्कैन करने से पैसे कभी प्राप्त नहीं होते, केवल भेजे जाते हैं!",
+            "detection_agents": [
+                "upi_agent"
+            ]
+        }
+    ],
+    "statistics_2024": {
+        "upi_fraud_losses": "₹1,000+ crore",
+        "digital_arrest_losses": "₹3,000+ crore",
+        "total_reported_frauds": "13.4 lakh",
+        "increase_yoy": "85%",
+        "source": "Finance Ministry India, Supreme Court"
+    },
+    "emergency_contacts": {
+        "cyber_crime_helpline": "1930",
+        "national_cyber_portal": "https://cybercrime.gov.in",
+        "rbi_sachet": "https://sachet.rbi.org.in",
+        "irdai_helpline": "155255",
+        "sebi_scores": "1800-227-227"
+    }
+}

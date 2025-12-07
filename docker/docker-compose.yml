@@ -1,0 +1,128 @@
+# Scalar Multi-Agent System - Docker Compose
+# Orchestrates multiple AI agents with Google ADK
+
+version: '3.9'
+
+services:
+  # Master Orchestrator Agent
+  orchestrator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: scalar-orchestrator
+    env_file:
+      - .env
+    environment:
+      - AGENT_TYPE=orchestrator
+      - AGENT_NAME=Master Orchestrator
+      - PYTHONPATH=/app
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./antigravity:/app/antigravity
+      - ./api:/app/api
+    depends_on:
+      - fraud-agent
+      - document-agent
+    networks:
+      - scalar-network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Fraud Detection Agent
+  fraud-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agent
+    container_name: scalar-fraud-agent
+    env_file:
+      - .env
+    environment:
+      - AGENT_TYPE=fraud_detection
+      - AGENT_NAME=Fraud Detection Agent
+      - AGENT_PORT=8001
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./antigravity:/app/antigravity
+    networks:
+      - scalar-network
+    restart: unless-stopped
+
+  # Document Analysis Agent
+  document-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agent
+    container_name: scalar-document-agent
+    env_file:
+      - .env
+    environment:
+      - AGENT_TYPE=document_analysis
+      - AGENT_NAME=Document Analysis Agent
+      - AGENT_PORT=8002
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./antigravity:/app/antigravity
+    networks:
+      - scalar-network
+    restart: unless-stopped
+
+  # Behavior Analysis Agent
+  behavior-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.agent
+    container_name: scalar-behavior-agent
+    env_file:
+      - .env
+    environment:
+      - AGENT_TYPE=behavior_analysis
+      - AGENT_NAME=Behavior Analysis Agent
+      - AGENT_PORT=8003
+    ports:
+      - "8003:8003"
+    volumes:
+      - ./antigravity:/app/antigravity
+    networks:
+      - scalar-network
+    restart: unless-stopped
+
+  # Redis for agent communication
+  redis:
+    image: redis:7-alpine
+    container_name: scalar-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - scalar-network
+    restart: unless-stopped
+
+  # Web UI (optional - can serve index.html)
+  web:
+    image: nginx:alpine
+    container_name: scalar-web
+    ports:
+      - "3000:80"
+    volumes:
+      - ./index.html:/usr/share/nginx/html/index.html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - orchestrator
+    networks:
+      - scalar-network
+    restart: unless-stopped
+
+networks:
+  scalar-network:
+    driver: bridge
+
+volumes:
+  redis-data:
