@@ -765,498 +765,596 @@
         </aside>
     </div>
 
-    <script>
-        const API_KEY = 'AIzaSyCaA-zzt0zxkw4RGWMKZebY1JPf1oagsQQ';
-        const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
-
-        // Trajectories with CLEAR descriptions
-        const TRAJECTORIES = {
-            'upi': {
-                name: '🎰 UPI Collect Request Fraud',
-                type: 'FAKE LOTTERY/PRIZE SCAM - Scammer sends collect request claiming you won prize. You DON\'T receive money, it gets DEBITED!',
-                risk: 0.95,
-                steps: ['1. You get message: "Won Rs 50,000!"', '2. Asked to accept UPI collect request', '3. You enter PIN thinking you\'ll receive', '4. Money DEBITED from YOUR account!', '5. Scammer disappears with your money']
-            },
-            'kyc': {
-                name: '📱 Fake KYC/Bank App Malware',
-                type: 'PHISHING ATTACK - Fake SMS claims KYC expired. Downloads malware that steals your banking passwords and OTPs.',
-                risk: 0.98,
-                steps: ['1. SMS: "KYC expired, account will block"', '2. Link downloads fake banking APK', '3. APK secretly mirrors your screen', '4. You login to real bank app', '5. Scammer sees OTP, empties account!']
-            },
-            'police': {
-                name: '👮 Fake CBI/Police "Digital Arrest"',
-                type: 'IMPERSONATION FRAUD - Criminals pretend to be CBI/Police on video call. Threaten "digital arrest" and demand money. REAL POLICE NEVER DO THIS!',
-                risk: 0.99,
-                steps: ['1. Call claiming to be from CBI/ED', '2. "Your Aadhaar linked to crime"', '3. Video call with fake uniform/office', '4. Kept on call for hours ("arrest")', '5. Forced to transfer to "safe account"']
-            },
-            'invest': {
-                name: '📈 Fake Crypto/Trading Platform',
-                type: 'PONZI SCHEME - Fake investment platform promising impossible returns (15%/month). Initial "profits" are fake. Platform vanishes with your money.',
-                risk: 0.94,
-                steps: ['1. Added to WhatsApp "trading" group', '2. Shown fake profit screenshots', '3. Small investment shows "gains"', '4. Invest more, asked for "tax"', '5. Platform disappears, money gone!']
-            }
-        };
-
-        let stats = { analyses: 0, blocked: 0 };
-        let processing = false;
-
-        // ============= THREE.JS DAG =============
-        let scene, camera, renderer, nodes = {}, edges = [], labels = {};
-        let animationFrame;
-
-        const NODE_POSITIONS = {
-            input: { x: 0, y: 1.5, z: 0 },
-            orchestrator: { x: 0, y: 0.5, z: 0 },
-            upi: { x: -2, y: -0.8, z: 0.5 },
-            phishing: { x: -0.7, y: -0.8, z: 0.8 },
-            impersonation: { x: 0.7, y: -0.8, z: 0.8 },
-            investment: { x: 2, y: -0.8, z: 0.5 },
-            document: { x: 0, y: -0.8, z: -0.8 },
-            output: { x: 0, y: -2, z: 0 }
-        };
-
-        const NODE_LABELS = {
-            input: 'INPUT',
-            orchestrator: 'ORCHESTRATOR',
-            upi: 'UPI',
-            phishing: 'PHISHING',
-            impersonation: 'POLICE',
-            investment: 'INVEST',
-            document: 'DOCUMENT',
-            output: 'RESULT'
-        };
-
-        function initThreeJS() {
-            const container = document.getElementById('dag-canvas');
-            const width = container.offsetWidth;
-            const height = container.offsetHeight;
-
-            // Scene
-            scene = new THREE.Scene();
-
-            // Camera
-            camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 100);
-            camera.position.set(0, 1, 6);
-            camera.lookAt(0, -0.3, 0);
-
-            // Renderer
-            renderer = new THREE.WebGLRenderer({ canvas: container, antialias: true, alpha: true });
-            renderer.setSize(width, height);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-            // Lights
-            const ambient = new THREE.AmbientLight(0xffffff, 0.4);
-            scene.add(ambient);
-
-            const point = new THREE.PointLight(0x6366f1, 1, 20);
-            point.position.set(0, 3, 3);
-            scene.add(point);
-
-            // Create nodes
-            Object.keys(NODE_POSITIONS).forEach(id => {
-                const pos = NODE_POSITIONS[id];
-                const isMain = id === 'orchestrator';
-                const size = isMain ? 0.35 : 0.25;
-
-                const geometry = new THREE.SphereGeometry(size, 32, 32);
-                const material = new THREE.MeshPhongMaterial({
-                    color: 0x3f3f46,
-                    emissive: 0x000000,
-                    shininess: 100
-                });
-
-                const mesh = new THREE.Mesh(geometry, material);
-                mesh.position.set(pos.x, pos.y, pos.z);
-                mesh.userData = { id, originalColor: 0x3f3f46 };
-                scene.add(mesh);
-                nodes[id] = mesh;
-            });
-
-            // Create edges
-            const edgeList = [
-                ['input', 'orchestrator'],
-                ['orchestrator', 'upi'],
-                ['orchestrator', 'phishing'],
-                ['orchestrator', 'impersonation'],
-                ['orchestrator', 'investment'],
-                ['orchestrator', 'document'],
-                ['upi', 'output'],
-                ['phishing', 'output'],
-                ['impersonation', 'output'],
-                ['investment', 'output'],
-                ['document', 'output']
-            ];
-
-            edgeList.forEach(([from, to]) => {
-                const p1 = NODE_POSITIONS[from];
-                const p2 = NODE_POSITIONS[to];
-
-                const points = [
-                    new THREE.Vector3(p1.x, p1.y, p1.z),
-                    new THREE.Vector3(p2.x, p2.y, p2.z)
-                ];
-
-                const geometry = new THREE.BufferGeometry().setFromPoints(points);
-                const material = new THREE.LineBasicMaterial({ color: 0x27272a, linewidth: 1 });
-                const line = new THREE.Line(geometry, material);
-                line.userData = { from, to };
-                scene.add(line);
-                edges.push(line);
-            });
-
-            // Create labels
-            updateLabels();
-
-            animate();
-        }
-
-        function updateLabels() {
-            const labelsContainer = document.getElementById('dag-labels');
-            labelsContainer.innerHTML = '';
-
-            Object.keys(nodes).forEach(id => {
-                const node = nodes[id];
-                const label = document.createElement('div');
-                label.className = 'dag-label';
-                label.id = `label-${id}`;
-                label.textContent = NODE_LABELS[id];
-                labelsContainer.appendChild(label);
-                labels[id] = label;
-            });
-        }
-
-        function projectToScreen(position) {
-            const vector = position.clone();
-            vector.project(camera);
-
-            const canvas = document.getElementById('dag-canvas');
-            const x = (vector.x * 0.5 + 0.5) * canvas.offsetWidth;
-            const y = (-vector.y * 0.5 + 0.5) * canvas.offsetHeight;
-
-            return { x, y };
-        }
-
-        function animate() {
-            animationFrame = requestAnimationFrame(animate);
-
-            // Gentle rotation
-            scene.rotation.y = Math.sin(Date.now() * 0.0003) * 0.15;
-
-            // Update label positions
-            Object.keys(nodes).forEach(id => {
-                const node = nodes[id];
-                const label = labels[id];
-                if (label) {
-                    const pos = projectToScreen(node.position);
-                    label.style.left = pos.x + 'px';
-                    label.style.top = (pos.y - 20) + 'px';
-                }
-            });
-
-            renderer.render(scene, camera);
-        }
-
-        function setNodeState(nodeId, state) {
-            const node = nodes[nodeId];
-            const label = labels[nodeId];
-            const chip = document.getElementById(`chip-${nodeId}`);
-
-            if (node) {
-                let color, emissive;
-                switch (state) {
-                    case 'running':
-                        color = 0x6366f1;
-                        emissive = 0x4338ca;
-                        break;
-                    case 'complete':
-                        color = 0x22c55e;
-                        emissive = 0x15803d;
-                        break;
-                    case 'alert':
-                        color = 0xef4444;
-                        emissive = 0xdc2626;
-                        break;
-                    default:
-                        color = 0x3f3f46;
-                        emissive = 0x000000;
-                }
-                node.material.color.setHex(color);
-                node.material.emissive.setHex(emissive);
-            }
-
-            if (label) {
-                label.className = 'dag-label';
-                if (state !== 'idle') label.classList.add(state);
-            }
-
-            if (chip) {
-                chip.className = 'agent-chip';
-                if (state !== 'idle') chip.classList.add(state);
-            }
-        }
-
-        function setEdgeState(fromId, toId, active) {
-            edges.forEach(edge => {
-                if (edge.userData.from === fromId && edge.userData.to === toId) {
-                    edge.material.color.setHex(active ? 0x6366f1 : 0x27272a);
-                }
-            });
-        }
-
-        function resetDAG() {
-            Object.keys(nodes).forEach(id => setNodeState(id, 'idle'));
-            edges.forEach(e => e.material.color.setHex(0x27272a));
-        }
-
-        // ============= ANALYSIS =============
-        function routeAgents(msg) {
-            const m = msg.toLowerCase();
-            const agents = [];
-            if (/collect|won|lottery|prize|upi|pay|qr|receive/.test(m)) agents.push('upi');
-            if (/kyc|apk|download|block|link|verify|24\s*hours/.test(m)) agents.push('phishing');
-            if (/police|cbi|ed|arrest|warrant|customs|aadhaar/.test(m)) agents.push('impersonation');
-            if (/invest|return|profit|crypto|double|forex|trading/.test(m)) agents.push('investment');
-            if (/loan|insurance|emi|policy|premium/.test(m)) agents.push('document');
-            if (agents.length === 0) agents.push('upi', 'phishing', 'impersonation');
-            return agents;
-        }
-
-        function detectTrajectory(msg) {
-            const m = msg.toLowerCase();
-            if (/cbi|police|ed|arrest|warrant|digital/.test(m)) return 'police';
-            if (/kyc|apk|download|block/.test(m)) return 'kyc';
-            if (/collect|won|lottery|prize/.test(m)) return 'upi';
-            if (/invest|crypto|return|profit|guaranteed/.test(m)) return 'invest';
-            return null;
-        }
-
-        async function runDAGAnimation(agents) {
-            resetDAG();
-
-            // Step 1: Input
-            setNodeState('input', 'running');
-            addActivity('Input received', 'info');
-            await delay(300);
-            setNodeState('input', 'complete');
-            setEdgeState('input', 'orchestrator', true);
-
-            // Step 2: Orchestrator
-            setNodeState('orchestrator', 'running');
-            addActivity('Orchestrator routing to agents...', 'info');
-            await delay(400);
-
-            // Step 3: Route to agents
-            for (const agent of agents) {
-                setEdgeState('orchestrator', agent, true);
-            }
-            setNodeState('orchestrator', 'complete');
-            await delay(200);
-
-            // Step 4: Parallel agent execution
-            addActivity(`Running ${agents.length} agents in parallel`, 'info');
-            agents.forEach(a => setNodeState(a, 'running'));
-            await delay(600);
-
-            // Step 5: Agents complete
-            agents.forEach(a => {
-                setNodeState(a, 'complete');
-                setEdgeState(a, 'output', true);
-            });
-            addActivity('All agents completed', 'success');
-            await delay(300);
-
-            // Step 6: Output
-            setNodeState('output', 'running');
-            await delay(200);
-
-            return agents;
-        }
-
-        function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-        function updateRisk(score, level) {
-            const el = document.getElementById('risk-score');
-            const fill = document.getElementById('risk-fill');
-            const label = document.getElementById('threat-label');
-
-            el.textContent = score.toFixed(2);
-            el.className = 'risk-score-big ' + level;
-
-            fill.style.width = `${Math.max(score * 100, 5)}%`;
-            fill.style.background = level === 'safe' || level === 'low' ? 'var(--success)' :
-                level === 'medium' ? 'var(--warning)' : 'var(--danger)';
-
-            const labels = {
-                safe: '✅ SAFE',
-                low: '✅ LOW RISK',
-                medium: '⚠️ MEDIUM RISK',
-                high: '🚨 HIGH RISK',
-                critical: '🚨 CRITICAL THREAT'
-            };
-            label.textContent = labels[level];
-        }
-
-        function showTrajectory(key) {
-            const traj = TRAJECTORIES[key];
-            if (!traj) return;
-
-            document.getElementById('traj-name').textContent = traj.name;
-            document.getElementById('traj-steps').innerHTML =
-                `<strong style="color:var(--danger);display:block;margin-bottom:6px;">${traj.type}</strong>` +
-                traj.steps.join('<br>');
-            document.getElementById('trajectory').classList.add('show');
-        }
-
-        function addActivity(text, type = 'info') {
-            const list = document.getElementById('activity');
-            const icons = { success: '✓', warning: '⚠', danger: '✕', info: '•' };
-            const item = document.createElement('div');
-            item.className = 'act-item';
-            item.innerHTML = `<div class="act-icon ${type}">${icons[type]}</div>${text}`;
-            list.insertBefore(item, list.firstChild);
-            while (list.children.length > 6) list.removeChild(list.lastChild);
-        }
-
-        // Chat
-        function addMsg(text, isUser = false, agent = 'Orchestrator') {
-            const msgs = document.getElementById('msgs');
-            const div = document.createElement('div');
-            div.className = `msg ${isUser ? 'user' : 'bot'}`;
-            div.innerHTML = `<div class="msg-content">${format(text)}</div><div class="msg-meta">${!isUser ? `<span class="tag">${agent}</span>` : ''}</div>`;
-            msgs.appendChild(div);
-            msgs.scrollTop = msgs.scrollHeight;
-        }
-
-        function format(t) { return t.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>'); }
-
-        function addTyping() {
-            const msgs = document.getElementById('msgs');
-            const div = document.createElement('div');
-            div.className = 'msg bot'; div.id = 'typing';
-            div.innerHTML = '<div class="msg-content"><div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>';
-            msgs.appendChild(div);
-            msgs.scrollTop = msgs.scrollHeight;
-        }
-
-        function removeTyping() { const t = document.getElementById('typing'); if (t) t.remove(); }
-
-        async function send() {
-            const input = document.getElementById('input');
-            const msg = input.value.trim();
-            if (!msg || processing) return;
-
-            processing = true;
-            document.getElementById('send').disabled = true;
-            document.getElementById('trajectory').classList.remove('show');
-            document.getElementById('hindi-panel').style.display = 'none';
-
-            addMsg(msg, true);
-            input.value = '';
-
-            stats.analyses++;
-            document.getElementById('analyses').textContent = stats.analyses;
-
-            // Run DAG animation
-            const agents = routeAgents(msg);
-            await runDAGAnimation(agents);
-
-            // Detect trajectory
-            const trajKey = detectTrajectory(msg);
-            if (trajKey) showTrajectory(trajKey);
-
-            addTyping();
-
-            try {
-                const res = await fetch(`${API_URL}?key=${API_KEY}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: `You are Financial Bodyguard. Analyze for fraud: "${msg}"\n\nRespond:\n**Risk: X.XX**\n**Type:** [type]\n**Action:** [advice]\n**हिंदी:** [hindi]` }] }],
-                        generationConfig: { temperature: 0.7, maxOutputTokens: 400 }
-                    })
-                });
-
-                removeTyping();
-
-                if (!res.ok) throw new Error('API error');
-                const data = await res.json();
-                const text = data.candidates[0].content.parts[0].text;
-
-                addMsg(text, false, 'Multi-Agent');
-
-                // Extract risk
-                const riskMatch = text.match(/Risk:\s*(\d+\.?\d*)/i);
-                const risk = riskMatch ? parseFloat(riskMatch[1]) : (trajKey ? TRAJECTORIES[trajKey].risk : 0.5);
-
-                const level = risk >= 0.9 ? 'critical' : risk >= 0.7 ? 'high' : risk >= 0.4 ? 'medium' : risk > 0.1 ? 'low' : 'safe';
-                updateRisk(risk, level);
-
-                // Mark output
-                setNodeState('output', level === 'safe' || level === 'low' ? 'complete' : 'alert');
-
-                if (risk >= 0.7) {
-                    stats.blocked++;
-                    document.getElementById('blocked').textContent = stats.blocked;
-                    addActivity('🚨 THREAT BLOCKED', 'danger');
-                    agents.forEach(a => setNodeState(a, 'alert'));
-                }
-
-                // Hindi
-                const hindiMatch = text.match(/हिंदी[:\s]*(.+?)(?=\n\n|\n\*|$)/s);
-                if (hindiMatch) {
-                    document.getElementById('hindi-text').innerHTML = hindiMatch[1].trim();
-                    document.getElementById('hindi-panel').style.display = 'block';
-                }
-
-            } catch (e) {
-                removeTyping();
-                if (trajKey) {
-                    const traj = TRAJECTORIES[trajKey];
-                    addMsg(`**Risk: ${traj.risk}**\n**Type:** ${traj.name}\n**Action:** This is a known scam pattern. Do NOT proceed!\n**हिंदी:** यह धोखाधड़ी है! आगे न बढ़ें!`, false, 'Fallback');
-                    updateRisk(traj.risk, 'critical');
-                    setNodeState('output', 'alert');
-                    agents.forEach(a => setNodeState(a, 'alert'));
-                    stats.blocked++;
-                    document.getElementById('blocked').textContent = stats.blocked;
-                }
-            }
-
-            processing = false;
-            document.getElementById('send').disabled = false;
-        }
-
-        function testScenario(type) {
-            const scenarios = {
-                upi: 'Congratulations! You won Rs 50,000 lottery! Accept UPI collect request from 9876543210 to receive your prize. Valid 24 hours!',
-                kyc: 'Dear SBI Customer: Your KYC expired. Account will be BLOCKED in 24 hours. Update now: bit.ly/sbi-kyc or download sbi-update.apk',
-                police: 'This is Officer Sharma, CBI. Your Aadhaar is linked to money laundering. Digital arrest warrant issued. Transfer Rs 2,00,000 to avoid arrest.',
-                invest: 'Join our crypto trading group! Guaranteed 15% monthly returns. No risk. Daily profits. Join with Rs 10,000 - become crorepati!'
-            };
-            document.getElementById('input').value = scenarios[type];
-            send();
-        }
-
-        function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }
-
-        // Init
-        window.addEventListener('load', () => {
-            initThreeJS();
-            document.getElementById('input').addEventListener('input', function () {
-                this.style.height = 'auto';
-                this.style.height = Math.min(this.scrollHeight, 60) + 'px';
-            });
-        });
-
-        window.addEventListener('resize', () => {
-            if (renderer) {
-                const container = document.getElementById('dag-canvas');
-                const width = container.offsetWidth;
-                const height = container.offsetHeight;
-                camera.aspect = width / height;
-                camera.updateProjectionMatrix();
-                renderer.setSize(width, height);
-            }
-        });
+    // ADK Backend Configuration
+    const ADK_URL = 'http://127.0.0.1:8080';
+    const ADK_APP = 'scalar_agent';
+    let sessionId = null;
+
+    // Fallback to direct Gemini if ADK not available
+    const GEMINI_API_KEY = 'AIzaSyCaA-zzt0zxkw4RGWMKZebY1JPf1oagsQQ';
+    const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+
+    // Trajectories with CLEAR descriptions
+    const TRAJECTORIES = {
+    'upi': {
+    name: '🎰 UPI Collect Request Fraud',
+    type: 'FAKE LOTTERY/PRIZE SCAM - Scammer sends collect request claiming you won prize. You DON\'T receive money, it
+    gets DEBITED!',
+    risk: 0.95,
+    steps: ['1. You get message: "Won Rs 50,000!"', '2. Asked to accept UPI collect request', '3. You enter PIN thinking
+    you\'ll receive', '4. Money DEBITED from YOUR account!', '5. Scammer disappears with your money']
+    },
+    'kyc': {
+    name: '📱 Fake KYC/Bank App Malware',
+    type: 'PHISHING ATTACK - Fake SMS claims KYC expired. Downloads malware that steals your banking passwords and
+    OTPs.',
+    risk: 0.98,
+    steps: ['1. SMS: "KYC expired, account will block"', '2. Link downloads fake banking APK', '3. APK secretly mirrors
+    your screen', '4. You login to real bank app', '5. Scammer sees OTP, empties account!']
+    },
+    'police': {
+    name: '👮 Fake CBI/Police "Digital Arrest"',
+    type: 'IMPERSONATION FRAUD - Criminals pretend to be CBI/Police on video call. Threaten "digital arrest" and demand
+    money. REAL POLICE NEVER DO THIS!',
+    risk: 0.99,
+    steps: ['1. Call claiming to be from CBI/ED', '2. "Your Aadhaar linked to crime"', '3. Video call with fake
+    uniform/office', '4. Kept on call for hours ("arrest")', '5. Forced to transfer to "safe account"']
+    },
+    'invest': {
+    name: '📈 Fake Crypto/Trading Platform',
+    type: 'PONZI SCHEME - Fake investment platform promising impossible returns (15%/month). Initial "profits" are fake.
+    Platform vanishes with your money.',
+    risk: 0.94,
+    steps: ['1. Added to WhatsApp "trading" group', '2. Shown fake profit screenshots', '3. Small investment shows
+    "gains"', '4. Invest more, asked for "tax"', '5. Platform disappears, money gone!']
+    }
+    };
+
+    let stats = { analyses: 0, blocked: 0 };
+    let processing = false;
+
+    // ============= THREE.JS DAG =============
+    let scene, camera, renderer, nodes = {}, edges = [], labels = {};
+    let animationFrame;
+
+    const NODE_POSITIONS = {
+    input: { x: 0, y: 1.5, z: 0 },
+    orchestrator: { x: 0, y: 0.5, z: 0 },
+    upi: { x: -2, y: -0.8, z: 0.5 },
+    phishing: { x: -0.7, y: -0.8, z: 0.8 },
+    impersonation: { x: 0.7, y: -0.8, z: 0.8 },
+    investment: { x: 2, y: -0.8, z: 0.5 },
+    document: { x: 0, y: -0.8, z: -0.8 },
+    output: { x: 0, y: -2, z: 0 }
+    };
+
+    const NODE_LABELS = {
+    input: 'INPUT',
+    orchestrator: 'ORCHESTRATOR',
+    upi: 'UPI',
+    phishing: 'PHISHING',
+    impersonation: 'POLICE',
+    investment: 'INVEST',
+    document: 'DOCUMENT',
+    output: 'RESULT'
+    };
+
+    function initThreeJS() {
+    const container = document.getElementById('dag-canvas');
+    const width = container.offsetWidth;
+    const height = container.offsetHeight;
+
+    // Scene
+    scene = new THREE.Scene();
+
+    // Camera
+    camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 100);
+    camera.position.set(0, 1, 6);
+    camera.lookAt(0, -0.3, 0);
+
+    // Renderer
+    renderer = new THREE.WebGLRenderer({ canvas: container, antialias: true, alpha: true });
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    // Lights
+    const ambient = new THREE.AmbientLight(0xffffff, 0.4);
+    scene.add(ambient);
+
+    const point = new THREE.PointLight(0x6366f1, 1, 20);
+    point.position.set(0, 3, 3);
+    scene.add(point);
+
+    // Create nodes
+    Object.keys(NODE_POSITIONS).forEach(id => {
+    const pos = NODE_POSITIONS[id];
+    const isMain = id === 'orchestrator';
+    const size = isMain ? 0.35 : 0.25;
+
+    const geometry = new THREE.SphereGeometry(size, 32, 32);
+    const material = new THREE.MeshPhongMaterial({
+    color: 0x3f3f46,
+    emissive: 0x000000,
+    shininess: 100
+    });
+
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.set(pos.x, pos.y, pos.z);
+    mesh.userData = { id, originalColor: 0x3f3f46 };
+    scene.add(mesh);
+    nodes[id] = mesh;
+    });
+
+    // Create edges
+    const edgeList = [
+    ['input', 'orchestrator'],
+    ['orchestrator', 'upi'],
+    ['orchestrator', 'phishing'],
+    ['orchestrator', 'impersonation'],
+    ['orchestrator', 'investment'],
+    ['orchestrator', 'document'],
+    ['upi', 'output'],
+    ['phishing', 'output'],
+    ['impersonation', 'output'],
+    ['investment', 'output'],
+    ['document', 'output']
+    ];
+
+    edgeList.forEach(([from, to]) => {
+    const p1 = NODE_POSITIONS[from];
+    const p2 = NODE_POSITIONS[to];
+
+    const points = [
+    new THREE.Vector3(p1.x, p1.y, p1.z),
+    new THREE.Vector3(p2.x, p2.y, p2.z)
+    ];
+
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    const material = new THREE.LineBasicMaterial({ color: 0x27272a, linewidth: 1 });
+    const line = new THREE.Line(geometry, material);
+    line.userData = { from, to };
+    scene.add(line);
+    edges.push(line);
+    });
+
+    // Create labels
+    updateLabels();
+
+    animate();
+    }
+
+    function updateLabels() {
+    const labelsContainer = document.getElementById('dag-labels');
+    labelsContainer.innerHTML = '';
+
+    Object.keys(nodes).forEach(id => {
+    const node = nodes[id];
+    const label = document.createElement('div');
+    label.className = 'dag-label';
+    label.id = `label-${id}`;
+    label.textContent = NODE_LABELS[id];
+    labelsContainer.appendChild(label);
+    labels[id] = label;
+    });
+    }
+
+    function projectToScreen(position) {
+    const vector = position.clone();
+    vector.project(camera);
+
+    const canvas = document.getElementById('dag-canvas');
+    const x = (vector.x * 0.5 + 0.5) * canvas.offsetWidth;
+    const y = (-vector.y * 0.5 + 0.5) * canvas.offsetHeight;
+
+    return { x, y };
+    }
+
+    function animate() {
+    animationFrame = requestAnimationFrame(animate);
+
+    // Gentle rotation
+    scene.rotation.y = Math.sin(Date.now() * 0.0003) * 0.15;
+
+    // Update label positions
+    Object.keys(nodes).forEach(id => {
+    const node = nodes[id];
+    const label = labels[id];
+    if (label) {
+    const pos = projectToScreen(node.position);
+    label.style.left = pos.x + 'px';
+    label.style.top = (pos.y - 20) + 'px';
+    }
+    });
+
+    renderer.render(scene, camera);
+    }
+
+    function setNodeState(nodeId, state) {
+    const node = nodes[nodeId];
+    const label = labels[nodeId];
+    const chip = document.getElementById(`chip-${nodeId}`);
+
+    if (node) {
+    let color, emissive;
+    switch (state) {
+    case 'running':
+    color = 0x6366f1;
+    emissive = 0x4338ca;
+    break;
+    case 'complete':
+    color = 0x22c55e;
+    emissive = 0x15803d;
+    break;
+    case 'alert':
+    color = 0xef4444;
+    emissive = 0xdc2626;
+    break;
+    default:
+    color = 0x3f3f46;
+    emissive = 0x000000;
+    }
+    node.material.color.setHex(color);
+    node.material.emissive.setHex(emissive);
+    }
+
+    if (label) {
+    label.className = 'dag-label';
+    if (state !== 'idle') label.classList.add(state);
+    }
+
+    if (chip) {
+    chip.className = 'agent-chip';
+    if (state !== 'idle') chip.classList.add(state);
+    }
+    }
+
+    function setEdgeState(fromId, toId, active) {
+    edges.forEach(edge => {
+    if (edge.userData.from === fromId && edge.userData.to === toId) {
+    edge.material.color.setHex(active ? 0x6366f1 : 0x27272a);
+    }
+    });
+    }
+
+    function resetDAG() {
+    Object.keys(nodes).forEach(id => setNodeState(id, 'idle'));
+    edges.forEach(e => e.material.color.setHex(0x27272a));
+    }
+
+    // ============= ANALYSIS =============
+    function routeAgents(msg) {
+    const m = msg.toLowerCase();
+    const agents = [];
+    if (/collect|won|lottery|prize|upi|pay|qr|receive/.test(m)) agents.push('upi');
+    if (/kyc|apk|download|block|link|verify|24\s*hours/.test(m)) agents.push('phishing');
+    if (/police|cbi|ed|arrest|warrant|customs|aadhaar/.test(m)) agents.push('impersonation');
+    if (/invest|return|profit|crypto|double|forex|trading/.test(m)) agents.push('investment');
+    if (/loan|insurance|emi|policy|premium/.test(m)) agents.push('document');
+    if (agents.length === 0) agents.push('upi', 'phishing', 'impersonation');
+    return agents;
+    }
+
+    function detectTrajectory(msg) {
+    const m = msg.toLowerCase();
+    if (/cbi|police|ed|arrest|warrant|digital/.test(m)) return 'police';
+    if (/kyc|apk|download|block/.test(m)) return 'kyc';
+    if (/collect|won|lottery|prize/.test(m)) return 'upi';
+    if (/invest|crypto|return|profit|guaranteed/.test(m)) return 'invest';
+    return null;
+    }
+
+    async function runDAGAnimation(agents) {
+    resetDAG();
+
+    // Step 1: Input
+    setNodeState('input', 'running');
+    addActivity('Input received', 'info');
+    await delay(300);
+    setNodeState('input', 'complete');
+    setEdgeState('input', 'orchestrator', true);
+
+    // Step 2: Orchestrator
+    setNodeState('orchestrator', 'running');
+    addActivity('Orchestrator routing to agents...', 'info');
+    await delay(400);
+
+    // Step 3: Route to agents
+    for (const agent of agents) {
+    setEdgeState('orchestrator', agent, true);
+    }
+    setNodeState('orchestrator', 'complete');
+    await delay(200);
+
+    // Step 4: Parallel agent execution
+    addActivity(`Running ${agents.length} agents in parallel`, 'info');
+    agents.forEach(a => setNodeState(a, 'running'));
+    await delay(600);
+
+    // Step 5: Agents complete
+    agents.forEach(a => {
+    setNodeState(a, 'complete');
+    setEdgeState(a, 'output', true);
+    });
+    addActivity('All agents completed', 'success');
+    await delay(300);
+
+    // Step 6: Output
+    setNodeState('output', 'running');
+    await delay(200);
+
+    return agents;
+    }
+
+    function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    function updateRisk(score, level) {
+    const el = document.getElementById('risk-score');
+    const fill = document.getElementById('risk-fill');
+    const label = document.getElementById('threat-label');
+
+    el.textContent = score.toFixed(2);
+    el.className = 'risk-score-big ' + level;
+
+    fill.style.width = `${Math.max(score * 100, 5)}%`;
+    fill.style.background = level === 'safe' || level === 'low' ? 'var(--success)' :
+    level === 'medium' ? 'var(--warning)' : 'var(--danger)';
+
+    const labels = {
+    safe: '✅ SAFE',
+    low: '✅ LOW RISK',
+    medium: '⚠️ MEDIUM RISK',
+    high: '🚨 HIGH RISK',
+    critical: '🚨 CRITICAL THREAT'
+    };
+    label.textContent = labels[level];
+    }
+
+    function showTrajectory(key) {
+    const traj = TRAJECTORIES[key];
+    if (!traj) return;
+
+    document.getElementById('traj-name').textContent = traj.name;
+    document.getElementById('traj-steps').innerHTML =
+    `<strong style="color:var(--danger);display:block;margin-bottom:6px;">${traj.type}</strong>` +
+    traj.steps.join('<br>');
+    document.getElementById('trajectory').classList.add('show');
+    }
+
+    function addActivity(text, type = 'info') {
+    const list = document.getElementById('activity');
+    const icons = { success: '✓', warning: '⚠', danger: '✕', info: '•' };
+    const item = document.createElement('div');
+    item.className = 'act-item';
+    item.innerHTML = `<div class="act-icon ${type}">${icons[type]}</div>${text}`;
+    list.insertBefore(item, list.firstChild);
+    while (list.children.length > 6) list.removeChild(list.lastChild);
+    }
+
+    // Chat
+    function addMsg(text, isUser = false, agent = 'Orchestrator') {
+    const msgs = document.getElementById('msgs');
+    const div = document.createElement('div');
+    div.className = `msg ${isUser ? 'user' : 'bot'}`;
+    div.innerHTML = `<div class="msg-content">${format(text)}</div>
+    <div class="msg-meta">${!isUser ? `<span class="tag">${agent}</span>` : ''}</div>`;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    function format(t) { return t.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>'); }
+
+    function addTyping() {
+    const msgs = document.getElementById('msgs');
+    const div = document.createElement('div');
+    div.className = 'msg bot'; div.id = 'typing';
+    div.innerHTML = '<div class="msg-content">
+        <div class="typing">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+    </div>';
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    function removeTyping() { const t = document.getElementById('typing'); if (t) t.remove(); }
+
+    // ADK API Call
+    async function callADK(message) {
+    try {
+    // Create session if needed
+    if (!sessionId) {
+    const sessionRes = await fetch(`${ADK_URL}/apps/${ADK_APP}/users/user/sessions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+    });
+    if (sessionRes.ok) {
+    const sessionData = await sessionRes.json();
+    sessionId = sessionData.id;
+    }
+    }
+
+    // Call ADK run_sse endpoint
+    const response = await fetch(`${ADK_URL}/run_sse`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+    app_name: ADK_APP,
+    user_id: 'user',
+    session_id: sessionId || 'default',
+    new_message: {
+    role: 'user',
+    parts: [{ text: message }]
+    }
+    })
+    });
+
+    if (!response.ok) return null;
+
+    // Parse SSE response
+    const text = await response.text();
+    const lines = text.split('\n');
+    let result = '';
+
+    for (const line of lines) {
+    if (line.startsWith('data: ')) {
+    try {
+    const data = JSON.parse(line.slice(6));
+    if (data.content && data.content.parts) {
+    for (const part of data.content.parts) {
+    if (part.text) result += part.text;
+    }
+    }
+    } catch (e) {}
+    }
+    }
+
+    return result || null;
+    } catch (e) {
+    console.log('ADK unavailable:', e);
+    return null;
+    }
+    }
+
+    // Fallback Gemini API Call
+    async function callGemini(message) {
+    const res = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+    contents: [{ parts: [{ text: `You are Financial Bodyguard. Analyze for fraud: "${message}"\n\nRespond:\n**Risk
+    Score: X.XX**\n**Fraud Type:** [type]\n**Recommendation:** [advice]\n**हिंदी:** [hindi]` }] }],
+    generationConfig: { temperature: 0.7, maxOutputTokens: 500 }
+    })
+    });
+
+    if (!res.ok) throw new Error('Gemini API error');
+    const data = await res.json();
+    return data.candidates[0].content.parts[0].text;
+    }
+
+    async function send() {
+    const input = document.getElementById('input');
+    const msg = input.value.trim();
+    if (!msg || processing) return;
+
+    processing = true;
+    document.getElementById('send').disabled = true;
+    document.getElementById('trajectory').classList.remove('show');
+    document.getElementById('hindi-panel').style.display = 'none';
+
+    addMsg(msg, true);
+    input.value = '';
+
+    stats.analyses++;
+    document.getElementById('analyses').textContent = stats.analyses;
+
+    // Run DAG animation
+    const agents = routeAgents(msg);
+    await runDAGAnimation(agents);
+
+    // Detect trajectory
+    const trajKey = detectTrajectory(msg);
+    if (trajKey) showTrajectory(trajKey);
+
+    addTyping();
+    addActivity('🔄 Calling ADK Financial Bodyguard...', 'info');
+
+    try {
+    // Try ADK Backend first
+    let text = await callADK(msg);
+
+    if (!text) {
+    // Fallback to direct Gemini
+    addActivity('⚡ ADK unavailable, using Gemini...', 'warning');
+    text = await callGemini(msg);
+    }
+
+    removeTyping();
+    addMsg(text, false, 'ADK Agent');
+    addActivity('✅ Analysis complete', 'success');
+
+    // Extract risk
+    const riskMatch = text.match(/Risk[:\s]*(\d+\.?\d*)/i);
+    const risk = riskMatch ? parseFloat(riskMatch[1]) : (trajKey ? TRAJECTORIES[trajKey].risk : 0.5);
+
+    const level = risk >= 0.9 ? 'critical' : risk >= 0.7 ? 'high' : risk >= 0.4 ? 'medium' : risk > 0.1 ? 'low' :
+    'safe';
+    updateRisk(risk, level);
+
+    // Mark output
+    setNodeState('output', level === 'safe' || level === 'low' ? 'complete' : 'alert');
+
+    if (risk >= 0.7) {
+    stats.blocked++;
+    document.getElementById('blocked').textContent = stats.blocked;
+    addActivity('🚨 THREAT BLOCKED', 'danger');
+    agents.forEach(a => setNodeState(a, 'alert'));
+    }
+
+    // Hindi
+    const hindiMatch = text.match(/हिंदी[:\s]*(.+?)(?=\n\n|\n\*|$)/s);
+    if (hindiMatch) {
+    document.getElementById('hindi-text').innerHTML = hindiMatch[1].trim();
+    document.getElementById('hindi-panel').style.display = 'block';
+    }
+
+    } catch (e) {
+    console.error('Error:', e);
+    removeTyping();
+    if (trajKey) {
+    const traj = TRAJECTORIES[trajKey];
+    addMsg(`**Risk: ${traj.risk}**\n**Type:** ${traj.name}\n**Action:** This is a known scam pattern. Do NOT
+    proceed!\n**हिंदी:** यह धोखाधड़ी है! आगे न बढ़ें!`, false, 'Fallback');
+    updateRisk(traj.risk, 'critical');
+    setNodeState('output', 'alert');
+    agents.forEach(a => setNodeState(a, 'alert'));
+    stats.blocked++;
+    document.getElementById('blocked').textContent = stats.blocked;
+    }
+    }
+
+    processing = false;
+    document.getElementById('send').disabled = false;
+    }
+
+    function testScenario(type) {
+    const scenarios = {
+    upi: 'Congratulations! You won Rs 50,000 lottery! Accept UPI collect request from 9876543210 to receive your prize.
+    Valid 24 hours!',
+    kyc: 'Dear SBI Customer: Your KYC expired. Account will be BLOCKED in 24 hours. Update now: bit.ly/sbi-kyc or
+    download sbi-update.apk',
+    police: 'This is Officer Sharma, CBI. Your Aadhaar is linked to money laundering. Digital arrest warrant issued.
+    Transfer Rs 2,00,000 to avoid arrest.',
+    invest: 'Join our crypto trading group! Guaranteed 15% monthly returns. No risk. Daily profits. Join with Rs 10,000
+    - become crorepati!'
+    };
+    document.getElementById('input').value = scenarios[type];
+    send();
+    }
+
+    function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }
+
+    // Init
+    window.addEventListener('load', () => {
+    initThreeJS();
+    document.getElementById('input').addEventListener('input', function () {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 60) + 'px';
+    });
+    });
+
+    window.addEventListener('resize', () => {
+    if (renderer) {
+    const container = document.getElementById('dag-canvas');
+    const width = container.offsetWidth;
+    const height = container.offsetHeight;
+    camera.aspect = width / height;
+    camera.updateProjectionMatrix();
+    renderer.setSize(width, height);
+    }
+    });
     </script>
 </body>
 
