@@ -769,12 +769,32 @@
         const API_KEY = 'AIzaSyCaA-zzt0zxkw4RGWMKZebY1JPf1oagsQQ';
         const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
-        // Trajectories
+        // Trajectories with CLEAR descriptions
         const TRAJECTORIES = {
-            'upi': { name: 'UPI Collect Scam', risk: 0.95, steps: ['1. Victim lists item for sale', '2. Scammer agrees to pay full price', '3. Sends UPI collect request', '4. Victim enters PIN thinking receive', '5. Money debited from account'] },
-            'kyc': { name: 'Fake KYC APK Scam', risk: 0.98, steps: ['1. SMS about KYC expiry', '2. Link to download APK', '3. APK installs screen mirror', '4. Victim opens banking app', '5. Scammer captures OTP, drains account'] },
-            'police': { name: 'Digital Arrest Scam', risk: 0.99, steps: ['1. Call from fake CBI/ED', '2. Aadhaar linked to crime', '3. Video call with fake uniform', '4. Digital arrest for hours', '5. Transfer to RBI safe account'] },
-            'invest': { name: 'Crypto Investment Scam', risk: 0.94, steps: ['1. Added to investment group', '2. Shows fake profits', '3. Invests life savings', '4. Asked to pay withdrawal tax', '5. Platform disappears'] }
+            'upi': {
+                name: '🎰 UPI Collect Request Fraud',
+                type: 'FAKE LOTTERY/PRIZE SCAM - Scammer sends collect request claiming you won prize. You DON\'T receive money, it gets DEBITED!',
+                risk: 0.95,
+                steps: ['1. You get message: "Won Rs 50,000!"', '2. Asked to accept UPI collect request', '3. You enter PIN thinking you\'ll receive', '4. Money DEBITED from YOUR account!', '5. Scammer disappears with your money']
+            },
+            'kyc': {
+                name: '📱 Fake KYC/Bank App Malware',
+                type: 'PHISHING ATTACK - Fake SMS claims KYC expired. Downloads malware that steals your banking passwords and OTPs.',
+                risk: 0.98,
+                steps: ['1. SMS: "KYC expired, account will block"', '2. Link downloads fake banking APK', '3. APK secretly mirrors your screen', '4. You login to real bank app', '5. Scammer sees OTP, empties account!']
+            },
+            'police': {
+                name: '👮 Fake CBI/Police "Digital Arrest"',
+                type: 'IMPERSONATION FRAUD - Criminals pretend to be CBI/Police on video call. Threaten "digital arrest" and demand money. REAL POLICE NEVER DO THIS!',
+                risk: 0.99,
+                steps: ['1. Call claiming to be from CBI/ED', '2. "Your Aadhaar linked to crime"', '3. Video call with fake uniform/office', '4. Kept on call for hours ("arrest")', '5. Forced to transfer to "safe account"']
+            },
+            'invest': {
+                name: '📈 Fake Crypto/Trading Platform',
+                type: 'PONZI SCHEME - Fake investment platform promising impossible returns (15%/month). Initial "profits" are fake. Platform vanishes with your money.',
+                risk: 0.94,
+                steps: ['1. Added to WhatsApp "trading" group', '2. Shown fake profit screenshots', '3. Small investment shows "gains"', '4. Invest more, asked for "tax"', '5. Platform disappears, money gone!']
+            }
         };
 
         let stats = { analyses: 0, blocked: 0 };
@@ -1081,7 +1101,9 @@
             if (!traj) return;
 
             document.getElementById('traj-name').textContent = traj.name;
-            document.getElementById('traj-steps').innerHTML = traj.steps.join('<br>');
+            document.getElementById('traj-steps').innerHTML =
+                `<strong style="color:var(--danger);display:block;margin-bottom:6px;">${traj.type}</strong>` +
+                traj.steps.join('<br>');
             document.getElementById('trajectory').classList.add('show');
         }
 
