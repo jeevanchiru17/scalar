@@ -1,10 +1,11 @@
-# Scalar - Financial Bodyguard
+# Scalar - Financial Bodyguard 🛡️
 
 > **Multi-Agent AI System protecting Indians 35-80+ from financial fraud**
+> Built with **Google Agent Development Kit (ADK)** + **Gemini AI**
 
-[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
-[![Gemini](https://img.shields.io/badge/Gemini-AI-orange.svg)](https://ai.google.dev)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://python.org)
+[![Google ADK](https://img.shields.io/badge/Google-ADK-orange.svg)](https://google.github.io/adk-docs/)
+[![Gemini](https://img.shields.io/badge/Gemini-2.0-green.svg)](https://ai.google.dev)
 
 ## 🎯 Problem
 
@@ -15,111 +16,151 @@
 
 ## 🛡️ Solution
 
-A multi-agent system using **Google ADK** and **Gemini AI** that:
+A multi-agent AI system using **Google ADK** that:
 - Analyzes suspicious messages in real-time
-- Coordinates 5 specialist fraud detection agents
+- Uses 7 specialized fraud detection tools
 - Provides bilingual warnings (English + Hindi)
 - Matches against 12 real-world scam trajectories
 
-## 🏗️ Architecture
+---
 
+## 🚀 Quick Start
+
+### 1. Install
+```bash
+pip install google-adk
 ```
-┌─────────────────────────────────────────────────────────┐
-│            FINANCIAL BODYGUARD ORCHESTRATOR             │
-├─────────────────────────────────────────────────────────┤
-│  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐       │
-│  │   UPI   │ │Phishing │ │ Police  │ │Document │       │
-│  │  Agent  │ │  Agent  │ │  Agent  │ │  Agent  │       │
-│  └─────────┘ └─────────┘ └─────────┘ └─────────┘       │
-│                    ┌─────────┐                          │
-│                    │ Invest  │                          │
-│                    │  Agent  │                          │
-│                    └─────────┘                          │
-└─────────────────────────────────────────────────────────┘
+
+### 2. Set API Key
+```bash
+echo "GOOGLE_API_KEY=your_key_here" > .env
 ```
+
+### 3. Run ADK Web UI
+```bash
+cd scalar_agent
+adk web
+```
+
+### 4. Open Browser
+```
+http://127.0.0.1:8000
+```
+
+---
+
+## 🤖 How It Uses Google ADK
+
+```python
+from google.adk.agents import Agent  # Official Google ADK
+
+# 1. Define tools as Python functions
+def detect_upi_scam(message: str) -> dict:
+    """Detects UPI fraud patterns."""
+    # Pattern matching + risk scoring
+    return {"risk_score": 0.95, "threats": [...]}
+
+# 2. Create Agent with Gemini model
+root_agent = Agent(
+    name="financial_bodyguard",
+    model="gemini-2.0-flash",
+    instruction="You protect users from fraud...",
+    tools=[detect_upi_scam, detect_phishing, ...]  # Functions → AI tools!
+)
+
+# 3. Run with: adk web
+```
+
+**ADK automatically:**
+- Converts Python functions to Gemini tools
+- Manages conversation context
+- Provides web UI for testing
+
+---
+
+## 🔧 7 Fraud Detection Tools
+
+| Tool | Purpose | Risk Detection |
+|------|---------|----------------|
+| `detect_upi_scam` | UPI collect, QR, prize scams | Pay-to-receive tricks |
+| `detect_kyc_phishing` | Fake KYC, APK malware | Malicious links |
+| `detect_police_impersonation` | Digital arrest, fake CBI | Authority scams |
+| `decode_loan_agreement` | Hidden loan fees | Foreclosure traps |
+| `decode_insurance_policy` | Policy exclusions | Coverage gaps |
+| `detect_investment_fraud` | Ponzi, crypto scams | Impossible returns |
+| `get_emergency_contacts` | Helpline numbers | 1930, RBI, SEBI |
+
+---
 
 ## 📂 Project Structure
 
 ```
-scalar/
-├── agents/           # Specialist agents
-├── core/             # ADK framework + Gemini client
-├── data/             # Fraud trajectories (12 patterns)
-├── api/              # FastAPI service
-├── web/              # Three.js 3D visualization
-├── docker/           # Container configs
-└── demo.py           # Demo script
+├── scalar_agent/          # ADK Agent (run: adk web)
+│   └── __init__.py        # Agent + 7 tools
+│
+├── agents/                # Extended implementations
+├── core/                  # Framework utilities
+├── data/                  # 12 fraud trajectories
+├── web/                   # Three.js 3D visualization
+├── docker/                # Container deployment
+│
+├── requirements.txt
+└── README.md
 ```
 
-## 🚀 Quick Start
+---
 
-```bash
-# Clone
-git clone https://github.com/YOUR_USERNAME/scalar.git
-cd scalar
+## 🎮 Test Messages
 
-# Install
-pip install -r requirements.txt
+Try these in the ADK chat:
 
-# Set API key
-echo "GEMINI_API_KEY=your_key" > .env
+| Scam Type | Test Message |
+|-----------|--------------|
+| UPI Scam | "You won Rs 50,000! Accept collect request" |
+| Digital Arrest | "This is CBI, pay Rs 2 lakh or arrest" |
+| KYC Phishing | "KYC expired, download sbi-update.apk" |
+| Investment | "15% monthly guaranteed crypto returns" |
 
-# Run demo
-python demo.py
-
-# Open UI
-open web/index.html
-```
-
-## 🤖 Specialist Agents
-
-| Agent | Expertise | Risk Detection |
-|-------|-----------|----------------|
-| 📱 **UPI Agent** | Collect scams, QR fraud | Pay-to-receive tricks |
-| 🔗 **Phishing Agent** | Fake KYC, APK malware | Malicious links |
-| 👮 **Impersonation Agent** | Fake CBI/Police | Digital arrest |
-| 📈 **Investment Agent** | Ponzi, crypto scams | Guaranteed returns |
-| 📄 **Document Agent** | Loan/insurance terms | Hidden fees |
+---
 
 ## 📊 Fraud Trajectories
 
-Real-world scam patterns from Reddit, Twitter, Supreme Court cases:
+12 real-world patterns from Reddit, Twitter, Supreme Court cases:
 
-1. **T001** - UPI Collect Request Scam
-2. **T002** - Digital Arrest (CBI/ED impersonation)
-3. **T003** - Fake KYC APK Download
-4. **T004** - Fake Customer Care
-5. **T005** - Jumped Deposit Scam
-6. **T006** - Electricity Bill Threat
-7. **T007** - Crypto Investment Fraud
-8. **T008** - Loan Pre-Approval Scam
-9. **T009** - Parcel/Courier Drug Scam
-10. **T010** - Insurance Premium Refund
-11. **T011** - SIM Swap Fraud
-12. **T012** - QR Code Payment Scam
+1. UPI Collect Scam
+2. Digital Arrest
+3. Fake KYC APK
+4. Fake Customer Care
+5. Jumped Deposit
+6. Electricity Threat
+7. Crypto Investment
+8. Loan Pre-Approval
+9. Parcel Drug Scam
+10. Insurance Refund
+11. SIM Swap
+12. QR Code Scam
 
-## 🐳 Docker
-
-```bash
-cd docker
-docker-compose up --build
-```
-
-Access: `http://localhost:3000`
+---
 
 ## 📞 Emergency Contacts
 
-- **Cyber Crime Helpline:** 1930
-- **Portal:** https://cybercrime.gov.in
-- **RBI Sachet:** https://sachet.rbi.org.in
-- **IRDAI:** 155255
+| Service | Contact |
+|---------|---------|
+| Cyber Crime Helpline | **1930** |
+| Online Portal | cybercrime.gov.in |
+| RBI Sachet | sachet.rbi.org.in |
+| SEBI Scores | 1800-227-227 |
+
+---
 
 ## 🛠️ Tech Stack
 
-- **AI:** Google Gemini, ADK
+- **AI Framework:** Google ADK + Gemini 2.0
 - **Backend:** Python, FastAPI
-- **Frontend:** Three.js, HTML/CSS
-- **Deployment:** Docker, Nginx
+- **Frontend:** Three.js 3D Visualization
+- **Deployment:** Docker
+
+---
 
 ## 📜 License
 
@@ -128,3 +169,5 @@ MIT License - See [LICENSE](LICENSE)
 ---
 
 **Built with ❤️ to protect elders from financial fraud**
+
+*Report scams: 1930 | cybercrime.gov.in*
