@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
@@ -643,6 +643,298 @@
         ::-webkit-scrollbar-thumb {
             background: var(--bg-4);
             border-radius: 2px
+        }
+
+        /* ========== RESPONSIVE DESIGN ========== */
+
+        /* Tablet - 768px to 1024px */
+        @media (max-width: 1024px) {
+            .app {
+                grid-template-columns: 1fr 300px;
+                gap: 6px;
+                padding: 6px
+            }
+
+            .dag-3d {
+                height: 280px
+            }
+
+            .agent-chip {
+                padding: 5px 8px;
+                font-size: 9px
+            }
+        }
+
+        /* Mobile Landscape & Small Tablets - 600px to 768px */
+        @media (max-width: 768px) {
+            .app {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto 1fr;
+                gap: 6px
+            }
+
+            .main-panel {
+                order: 2
+            }
+
+            .chat {
+                order: 1;
+                max-height: 50vh
+            }
+
+            .header {
+                flex-wrap: wrap;
+                gap: 8px
+            }
+
+            .metrics {
+                gap: 12px
+            }
+
+            .dag-3d {
+                height: 220px
+            }
+
+            .agent-bar {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                padding-bottom: 6px
+            }
+
+            .agent-chip {
+                flex-shrink: 0
+            }
+
+            .risk-compact {
+                flex-wrap: wrap
+            }
+
+            .risk-score-big {
+                font-size: 28px
+            }
+        }
+
+        /* Mobile Portrait - under 600px */
+        @media (max-width: 600px) {
+            .app {
+                padding: 4px;
+                gap: 4px
+            }
+
+            .header {
+                padding: 6px 10px
+            }
+
+            .brand-name {
+                font-size: 12px
+            }
+
+            .brand-sub {
+                font-size: 8px
+            }
+
+            .brand-mark {
+                width: 24px;
+                height: 24px;
+                font-size: 10px
+            }
+
+            .metric-val {
+                font-size: 14px
+            }
+
+            .metric-lbl {
+                font-size: 7px
+            }
+
+            .status {
+                font-size: 9px;
+                padding: 3px 6px
+            }
+
+            .dag-3d {
+                height: 180px
+            }
+
+            .card {
+                padding: 8px
+            }
+
+            .card-title {
+                font-size: 9px
+            }
+
+            .agent-chip {
+                padding: 4px 6px;
+                font-size: 8px
+            }
+
+            .agent-dot {
+                width: 5px;
+                height: 5px
+            }
+
+            .risk-score-big {
+                font-size: 24px
+            }
+
+            .threat-label {
+                font-size: 10px
+            }
+
+            .trajectory {
+                padding: 8px
+            }
+
+            .traj-title {
+                font-size: 10px
+            }
+
+            .traj-steps {
+                font-size: 8px
+            }
+
+            .chat {
+                max-height: 45vh
+            }
+
+            .chat-head {
+                padding: 8px;
+                font-size: 10px
+            }
+
+            .chat-msgs {
+                padding: 8px
+            }
+
+            .msg-content {
+                padding: 6px 8px;
+                font-size: 10px
+            }
+
+            .quick {
+                gap: 2px
+            }
+
+            .qbtn {
+                padding: 3px 5px;
+                font-size: 8px
+            }
+
+            .input {
+                padding: 6px 8px;
+                font-size: 10px;
+                min-height: 32px
+            }
+
+            .send {
+                width: 32px;
+                height: 32px;
+                font-size: 10px
+            }
+
+            .act-item {
+                padding: 4px;
+                font-size: 8px
+            }
+
+            .act-icon {
+                width: 14px;
+                height: 14px;
+                font-size: 7px
+            }
+
+            .hindi-panel {
+                padding: 6px;
+                margin: 6px
+            }
+
+            .hindi-text {
+                font-size: 10px
+            }
+        }
+
+        /* Very Small Mobile - under 400px */
+        @media (max-width: 400px) {
+            .metrics {
+                display: none
+            }
+
+            .dag-3d {
+                height: 150px
+            }
+
+            .agent-bar {
+                display: none
+            }
+
+            .chat {
+                max-height: 60vh
+            }
+
+            .quick {
+                flex-wrap: wrap
+            }
+
+            .qbtn {
+                flex: 1 1 45%
+            }
+        }
+
+        /* Landscape Mobile */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .dag-3d {
+                height: 150px
+            }
+
+            .chat {
+                max-height: 70vh
+            }
+
+            .activity {
+                max-height: 80px
+            }
+        }
+
+        /* Touch device optimizations */
+        @media (hover: none) and (pointer: coarse) {
+            .qbtn {
+                min-height: 36px;
+                min-width: 60px
+            }
+
+            .send {
+                min-width: 40px;
+                min-height: 40px
+            }
+
+            .agent-chip {
+                min-height: 32px
+            }
+        }
+
+        /* High DPI / Retina displays */
+        @media (-webkit-min-device-pixel-ratio: 2),
+        (min-resolution: 192dpi) {
+            .brand-mark {
+                font-weight: 600
+            }
+        }
+
+        /* Print styles */
+        @media print {
+
+            .dag-3d,
+            .chat-input,
+            .send,
+            .quick {
+                display: none
+            }
+
+            body {
+                background: white;
+                color: black
+            }
         }
     </style>
 </head>
